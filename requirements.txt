@@ -1,6 +1,5 @@
-vietocr
+transformers < 5.0.0
 numpy==1.26.4
-opencv-python==4.9.0.80
 pillow==10.2.0
 onnxruntime-gpu
 torch
@@ -21,7 +20,6 @@ trio
 sherpa-onnx
 soundfile
 librosa
-transformers
 timm
 fastapi
 uvicorn[standard]
