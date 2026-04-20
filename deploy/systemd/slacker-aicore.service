@@ -1,0 +1,19 @@
+[Unit]
+Description=Slacker AI Core FastAPI Service
+After=network.target
+
+[Service]
+Type=simple
+User=ubuntu
+Group=ubuntu
+WorkingDirectory=/opt/slacker-ai
+EnvironmentFile=/opt/slacker-ai/.env
+ExecStart=/home/ubuntu/miniconda3/bin/conda run -n slacker-ai python -m uvicorn aicore.api_server:app --host 0.0.0.0 --port 8000 --workers 1
+Restart=always
+RestartSec=5
+TimeoutStopSec=30
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
