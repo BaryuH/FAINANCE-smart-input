@@ -1,9 +1,17 @@
 import os
 from pathlib import Path
 
+try:
+    from dotenv import load_dotenv
+except ImportError:  # pragma: no cover - optional at runtime
+    load_dotenv = None
+
 # Base paths
 BASE_DIR = Path(__file__).resolve().parent.parent
 PROJECT_ROOT = BASE_DIR
+
+if load_dotenv is not None:
+    load_dotenv(PROJECT_ROOT / ".env")
 
 # Model paths
 MODELS_DIR = BASE_DIR / "models"
@@ -80,7 +88,7 @@ output: {"category":"nhà cửa","price":200000000,"note":"sửa nhà"}
 """.strip()
 
 # OCR prompt
-OCR_PROMPT = """Trích xuất dạng đoạn văn tóm tắt thông tin hóa đơn, Nói cực ngắn gọn"""
+OCR_PROMPT = """Trích xuất thông tin của hóa đơn đầy đủ"""
 OCR_PROMPT_2 = """Trích xuất từ ảnh thông tin số tiền sau cùng (đã giảm giá, trừ thuế (nếu có)). Format lại thành JSON theo schema sau, không cần giải thích gì thêm:
 {
   'category': <'' (để trống)>,

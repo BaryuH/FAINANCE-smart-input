@@ -26,5 +26,6 @@ timm
 fastapi
 uvicorn[standard]
 python-multipart
+python-dotenv
 accelerate
 bitsandbytes
