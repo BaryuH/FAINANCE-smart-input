@@ -38,7 +38,7 @@ class BaseLLMParser:
                 parsed["price"] = int(parsed.get("price", 0))
                 return parsed
         except (json.JSONDecodeError, ValueError) as e:
-            logger.warning(f"JSON extraction failed: {e}")
+            logger.warning("Failed to extract JSON from LLM response: %s", e)
         return {"category": "khác", "price": 0, "note": fallback_text}
 
 
@@ -69,7 +69,7 @@ class OllamaLLMParser(BaseLLMParser):
             else f"{self.host.rstrip('/')}/api/chat"
         )
         self._initialized = True
-        logger.info(f"Ollama parser initialized with model: {self.model}")
+        logger.info("Ollama parser initialized model=%s host=%s", self.model, self.host)
 
     @classmethod
     def get_instance(cls) -> "OllamaLLMParser":
@@ -114,7 +114,7 @@ class OllamaLLMParser(BaseLLMParser):
             content = (message.get("content") or "").strip()
             return self._extract_json(content, fallback_text)
         except Exception as e:
-            logger.error(f"Ollama parsing failed: {e}", exc_info=True)
+            logger.error("Ollama API request failed model=%s error=%s", self.model, e, exc_info=True)
             return {"category": "khác", "price": 0, "note": fallback_text}
 
 

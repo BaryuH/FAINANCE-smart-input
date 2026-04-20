@@ -31,7 +31,7 @@ class GipformerASR:
         if self._initialized:
             return
 
-        logger.info("Initializing Gipformer ASR (ONNX) ...")
+        logger.info("Initializing Gipformer ASR runtime (ONNX)")
 
         # Import the gipformer inference helpers from the project folder
         from importlib import util
@@ -57,7 +57,7 @@ class GipformerASR:
             module.SAMPLE_RATE if hasattr(module, "SAMPLE_RATE") else 16000
         )
         self._initialized = True
-        logger.info("Gipformer ASR ready")
+        logger.info("Gipformer ASR runtime is ready")
 
     @classmethod
     def get_instance(cls) -> "GipformerASR":
@@ -69,7 +69,7 @@ class GipformerASR:
         try:
             return self.module.transcribe(self.recognizer, audio_path)
         except Exception as e:
-            logger.error(f"Gipformer transcribe failed: {e}", exc_info=True)
+            logger.error("Audio transcription failed path=%s error=%s", audio_path, e, exc_info=True)
             return ""
 
     def transcribe_bytes(self, audio_bytes: bytes, format: str = "wav") -> str:
@@ -91,5 +91,5 @@ class GipformerASR:
 
             return text
         except Exception as e:
-            logger.error(f"Gipformer transcribe_bytes failed: {e}", exc_info=True)
+            logger.error("Audio-bytes transcription failed format=%s error=%s", format, e, exc_info=True)
             return ""

@@ -21,7 +21,7 @@ def get_asr_instance() -> Any:
     """
     provider = ASR_CONFIG.get("provider", "gipformer")
     if provider != "gipformer":
-        logger.warning("ASR provider is not 'gipformer' — forcing gipformer usage")
+        logger.warning("Unsupported ASR provider=%s; forcing provider=gipformer", provider)
 
     try:
         # Lazy import so gipformer-related deps are only required when used
@@ -29,5 +29,5 @@ def get_asr_instance() -> Any:
 
         return GipformerASR.get_instance()
     except Exception as e:
-        logger.exception("Failed to initialize GipformerASR")
+        logger.exception("Failed to initialize Gipformer ASR runtime")
         raise RuntimeError("Failed to initialize Gipformer ASR") from e

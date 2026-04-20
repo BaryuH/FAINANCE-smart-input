@@ -12,6 +12,7 @@ import uvicorn
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from PIL import Image, UnidentifiedImageError
 
 from .config import (
     ALLOWED_ORIGINS,
@@ -40,7 +41,7 @@ MB = 1024 * 1024
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Startup and shutdown events."""
-    logger.info("Starting AI server - loading all models...")
+    logger.info("Starting AI server and loading model runtime")
     pipeline = AIPipeline()
     gpu_queue = GpuTaskQueue(
         worker_count=GPU_WORKERS,
@@ -51,10 +52,10 @@ async def lifespan(app: FastAPI):
     app.state.pipeline = pipeline
     app.state.gpu_queue = gpu_queue
     app.state.started_at = time.time()
-    logger.info("All models loaded and ready!")
+    logger.info("AI server startup completed; runtime is ready")
     yield
     await app.state.gpu_queue.stop()
-    logger.info("Shutting down AI server...")
+    logger.info("Shutting down AI server runtime")
 
 
 app = FastAPI(
@@ -95,6 +96,28 @@ async def _save_upload_to_temp(upload: UploadFile, max_bytes: int, default_suffi
         return tmp.name
 
 
+def _resize_image_longest_side(image_path: str, longest_side: int = 448) -> None:
+    """Resize an image so its longest side equals longest_side."""
+    try:
+        with Image.open(image_path) as img:
+            width, height = img.size
+            if width <= 0 or height <= 0:
+                raise HTTPException(status_code=400, detail="Invalid image dimensions")
+
+            current_longest = max(width, height)
+            if current_longest == longest_side:
+                return
+
+            scale = longest_side / float(current_longest)
+            new_width = max(1, int(round(width * scale)))
+            new_height = max(1, int(round(height * scale)))
+            resampling = getattr(Image, "Resampling", Image)
+            resized = img.resize((new_width, new_height), resampling.LANCZOS)
+            resized.save(image_path)
+    except UnidentifiedImageError as exc:
+        raise HTTPException(status_code=400, detail="Invalid image file") from exc
+
+
 @app.get("/health/live")
 async def health_live():
     return {"status": "alive"}
@@ -130,6 +153,7 @@ async def process_image(file: UploadFile = File(...)):
             raise HTTPException(status_code=400, detail="File must be an image")
 
         tmp_path = await _save_upload_to_temp(file, MAX_IMAGE_MB * MB, ".jpg")
+        _resize_image_longest_side(tmp_path, longest_side=448)
         queue_result = await asyncio.wait_for(
             app.state.gpu_queue.submit(request_id, "image", {"path": tmp_path}),
             timeout=REQUEST_TIMEOUT_SEC,
@@ -148,14 +172,14 @@ async def process_image(file: UploadFile = File(...)):
             detail=f"Request timed out after {REQUEST_TIMEOUT_SEC}s",
         )
     except Exception as e:
-        logger.error("Image processing error request_id=%s: %s", request_id, e, exc_info=True)
+        logger.error("Image request failed request_id=%s error=%s", request_id, e, exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
     finally:
         if tmp_path:
             try:
                 Path(tmp_path).unlink(missing_ok=True)
             except Exception:
-                logger.warning("Failed to delete temporary image file: %s", tmp_path)
+                logger.warning("Temporary image cleanup failed path=%s", tmp_path)
 
 
 @app.post("/api/process/audio")
@@ -188,14 +212,14 @@ async def process_audio(file: UploadFile = File(...)):
             detail=f"Request timed out after {REQUEST_TIMEOUT_SEC}s",
         )
     except Exception as e:
-        logger.error("Audio processing error request_id=%s: %s", request_id, e, exc_info=True)
+        logger.error("Audio request failed request_id=%s error=%s", request_id, e, exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
     finally:
         if tmp_path:
             try:
                 Path(tmp_path).unlink(missing_ok=True)
             except Exception:
-                logger.warning("Failed to delete temporary audio file: %s", tmp_path)
+                logger.warning("Temporary audio cleanup failed path=%s", tmp_path)
 
 
 @app.post("/api/process/text")
@@ -221,13 +245,13 @@ async def process_text(text: str = Form(...)):
             detail=f"Request timed out after {REQUEST_TIMEOUT_SEC}s",
         )
     except Exception as e:
-        logger.error("Text processing error request_id=%s: %s", request_id, e, exc_info=True)
+        logger.error("Text request failed request_id=%s error=%s", request_id, e, exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
 
 
 def run_server():
     """Run the FastAPI server."""
-    logger.info(f"Starting server on {SERVER_HOST}:{SERVER_PORT}")
+    logger.info("Launching API server host=%s port=%s", SERVER_HOST, SERVER_PORT)
     uvicorn.run(
         "aicore.api_server:app",
         host=SERVER_HOST,
