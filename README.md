@@ -8,8 +8,8 @@
 
 | Feature | Input | Output |
 |---|---|---|
-| 🎙️ **Vietnamese ASR** | Audio file | Transcribed text + metadata |
-| 🧾 **Invoice OCR** | Photo of receipt/invoice | Structured JSON (vendor, date, items, total) |
+| 🎙️ **Vietnamese ASR** | Audio file | Transcribed text + Structured JSON|
+| 🧾 **Invoice OCR** | Photo of receipt/invoice | Report + Structured JSON |
 | 💬 **LLM Financial Parser** | Text / prompt | Extracted entities, categories, suggestions |
 
 ---
@@ -26,7 +26,7 @@
 
 - **ASR** — [Gipformer 65M](https://huggingface.co/g-group-ai-lab/gipformer-65M-rnnt): lightweight ONNX/PyTorch model optimized for Vietnamese speech
 - **OCR** — [Vintern-1B v3.5](https://huggingface.co/5CD-AI/Vintern-1B-v3_5): document-level vision-language model for invoice parsing
-- **LLM** — OpenAI API or local Ollama for entity extraction and financial normalization
+- **LLM** — OpenAI API or Ollama for entity extraction and financial normalization
 - **Server** — FastAPI application under `aicore/`
 
 ---
@@ -53,11 +53,9 @@ frontend-test/   — Minimal frontend demo for quick integration testing
 
 ```json
 {
-  "vendor": "Example Store",
-  "date": "2026-04-15",
-  "items": [{ "name": "Item A", "qty": 1, "price": 12.50 }],
-  "currency": "VND",
-  "total": 125000
+  "category": "ăn uống",
+  "price": 150000,
+  "note": "Lunch with clients"
 }
 ```
 
@@ -66,7 +64,7 @@ frontend-test/   — Minimal frontend demo for quick integration testing
 
 | Layer | Technology |
 |---|---|
-| 🐍 Runtime | Python 3.8+ |
+| 🐍 Runtime | Python 3.11+ |
 | ⚙️ Framework | FastAPI + Uvicorn |
 | 🎙️ ASR | Gipformer 65M (ONNX / PyTorch) |
 | 🧾 OCR | Vintern-1B v3.5 |
