@@ -27,6 +27,7 @@ Cài thêm `screen`, `tmux` và `nginx`:
 
 ```bash
 sudo apt-get install -y screen tmux nginx
+sudo apt install iproute2 net-tools -y
 ```
 
 ---
@@ -80,9 +81,12 @@ OLLAMA_TIMEOUT_SECONDS=60              # Timeout (giây) cho mỗi request
 ## 5. Tạo môi trường Python
 
 ```bash
-conda create -n main python=3.11 -y
+conda create -n main python==3.11
 conda activate main
+# Cài dependencies
 pip install -r requirements.txt
+
+# Cài PyTorch phù hợp với CUDA
 ```
 
 ---
@@ -95,8 +99,6 @@ Tạo cấu hình reverse proxy để Nginx chuyển tiếp traffic từ cổng 
 sudo tee /etc/nginx/sites-available/default > /dev/null << 'EOF'
 server {
     listen 80 default_server;
-    listen [::]:80 default_server;
-
     server_name _;
 
     client_max_body_size 100M;
@@ -125,7 +127,7 @@ Kiểm tra và khởi động lại Nginx:
 
 ```bash
 sudo nginx -t
-sudo systemctl restart nginx
+sudo service nginx restart
 ```
 
 ---
@@ -136,9 +138,9 @@ Sử dụng `screen` để giữ tiến trình chạy nền sau khi thoát SSH:
 
 ```bash
 cd /root/FAINANCE-smart-input
-conda activate main
 
 screen -S fainance
+conda activate main
 python -m uvicorn aicore.api_server:app --host 0.0.0.0 --port 8000 --workers 1
 ```
 
