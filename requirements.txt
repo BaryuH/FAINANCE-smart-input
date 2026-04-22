@@ -27,3 +27,4 @@ python-multipart
 python-dotenv
 accelerate
 bitsandbytes
+einops
